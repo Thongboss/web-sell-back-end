@@ -10,6 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,9 +25,9 @@ public class ProductDTO {
     private String thumbnail;
     @Min(value = 0, message = "Product's price must be greater than or equal to 0")
     @Max(value = 10000, message = "Product's quantity must be less than or equal 10.000")
-    private Integer quantity;
+    private int quantity;
     private String description;
     @JsonProperty("category_id")
     private String categoryId;
-    private MultipartFile file;
+    private List<MultipartFile> files;
 }

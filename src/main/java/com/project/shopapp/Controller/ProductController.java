@@ -16,11 +16,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/products")
+@RequestMapping("${api.prefix}/products")
 public class ProductController {
     @GetMapping
     public ResponseEntity<?> getAllProduct(@RequestParam("page") int page, @RequestParam("limit") int limit){
@@ -39,8 +40,12 @@ public class ProductController {
                         .toList();
                 return ResponseEntity.badRequest().body(erorrMesage);
             }
-            MultipartFile file = productDTO.getFile();
-            if(file != null){
+            List<MultipartFile> files = productDTO.getFiles();
+            files = files == null ? new ArrayList<MultipartFile>() : files;
+            for (MultipartFile file : files){
+                if (file.getSize() == 0){
+                    continue;
+                }
                 //Kiểm tra kích thước file và định dạng
                 if (file.getSize() > 10 * 1024 * 1024){// kích thước > 10M
 //                throw new ResponseStatusException(
@@ -56,7 +61,6 @@ public class ProductController {
                 }
                 //Lưu file và cập nhật thumbnail trong ProductDTO
                 String fileName = storeFile(file);
-
             }
             return ResponseEntity.ok("Add product successfully! ");
         }catch (Exception e){
