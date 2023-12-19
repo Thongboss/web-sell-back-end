@@ -1,7 +1,12 @@
 package com.project.shopapp.Controller;
 
 import com.project.shopapp.dtos.ProductDTO;
+import com.project.shopapp.dtos.ProductImageDTO;
+import com.project.shopapp.models.Product;
+import com.project.shopapp.models.ProductImage;
+import com.project.shopapp.services.IProductService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +28,17 @@ import java.util.UUID;
 @RestController
 @RequestMapping("${api.prefix}/products")
 public class ProductController {
+
+    @Autowired
+    private IProductService productService;
+
     @GetMapping
     public ResponseEntity<?> getAllProduct(@RequestParam("page") int page, @RequestParam("limit") int limit){
         return ResponseEntity.ok(String.format("List products for page = %d and limit = %d", page, limit));
     }
 
-    @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> addProduct(@Valid @ModelAttribute ProductDTO productDTO,
+    @PostMapping
+    public ResponseEntity<?> addProduct(@Valid @RequestBody ProductDTO productDTO,
 //                                        @RequestPart("file") MultipartFile file,
                                         BindingResult result){
         try {
@@ -40,7 +49,22 @@ public class ProductController {
                         .toList();
                 return ResponseEntity.badRequest().body(erorrMesage);
             }
-            List<MultipartFile> files = productDTO.getFiles();
+            Product newProduct = productService.createProduct(productDTO);
+            return ResponseEntity.ok(newProduct);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/uploads/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadProductImage(
+            @PathVariable("id") Long id,
+            @ModelAttribute("files") List<MultipartFile> files){
+
+        try {
+            Product existingProduct = productService.getProductById(id);
+            List<ProductImage> productImages = new ArrayList<>();
+
             files = files == null ? new ArrayList<MultipartFile>() : files;
             for (MultipartFile file : files){
                 if (file.getSize() == 0){
@@ -61,9 +85,15 @@ public class ProductController {
                 }
                 //Lưu file và cập nhật thumbnail trong ProductDTO
                 String fileName = storeFile(file);
+                ProductImage newProductImage = productService.createProductImage(
+                        existingProduct.getId(),
+                        ProductImageDTO.builder()
+                                .imageUrl(fileName)
+                                .build());
+                productImages.add(newProductImage);
             }
-            return ResponseEntity.ok("Add product successfully! ");
-        }catch (Exception e){
+            return ResponseEntity.ok().body(productImages);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
