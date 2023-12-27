@@ -10,6 +10,7 @@ import com.project.shopapp.models.ProductImage;
 import com.project.shopapp.repositories.CategoryRepository;
 import com.project.shopapp.repositories.ProductImageRepository;
 import com.project.shopapp.repositories.ProductRepository;
+import com.project.shopapp.responses.ProductResponse;
 import com.project.shopapp.services.IProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -39,8 +40,9 @@ public class ProductServiceImpl implements IProductService {
         Product newProduct = Product.builder()
                 .name(productDTO.getName())
                 .price(productDTO.getPrice())
+                .quantity(productDTO.getQuantity())
                 .category(existingCategory)
-                .thumbnail(productDTO.getThumbnail())
+                .thumbnail("")
                 .description(productDTO.getDescription())
                 .build();
         return productRepository.save(newProduct);
@@ -53,9 +55,9 @@ public class ProductServiceImpl implements IProductService {
     }
 
     @Override
-    public Page<Product> getAllProducts(PageRequest pageRequest) {
+    public Page<ProductResponse> getAllProducts(PageRequest pageRequest) {
         //Lấy danh sách sản phẩm theo trang(page) và giới hạn(limit)
-        return productRepository.findAll(pageRequest);
+        return productRepository.findAll(pageRequest).map(ProductResponse::convertProductToResponse);
     }
 
     @Override
@@ -95,7 +97,7 @@ public class ProductServiceImpl implements IProductService {
                 .build();
         // không cho insert 5 ảnh trên 1 sản phẩm
         int size = productImageRepository.findByProductId(id).size();
-        if (size >= 5){
+        if (size >= ProductImage.MAXIMUM_IMAGES_PER_PRODUCT){
             throw new InvalidParamException("Number of image must be <= 5");
         }
         return productImageRepository.save(newProductImage);
