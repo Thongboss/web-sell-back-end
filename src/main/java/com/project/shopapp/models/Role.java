@@ -18,4 +18,9 @@ public class Role {
     private Long id;
     @Column(name = "name", nullable = false,length = 20)
     private String name;
+
+    public static String ADMIN = "ADMIN";
+    public static String USER = "USER";
+    public static String STAFF = "STAFF";
+    public static String MANAGER = "MANAGER";
 }

@@ -3,6 +3,7 @@ package com.project.shopapp.services.impl;
 import com.project.shopapp.components.JwtTokenUtil;
 import com.project.shopapp.dtos.UserDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
+import com.project.shopapp.exceptions.PermissionDenyException;
 import com.project.shopapp.models.Role;
 import com.project.shopapp.models.User;
 import com.project.shopapp.repositories.RoleRepository;
@@ -33,10 +34,15 @@ public class UserServiceImpl implements IUserService {
     private final AuthenticationManager authenticationManager;
 
     @Override
-    public User createUser(UserDTO userDTO) throws DataNotFoundException {
+    public User createUser(UserDTO userDTO) throws Exception {
         // kiểm tra số điện thoại đã tồn tại hay chưa'
         if (userRepository.existsByPhoneNumber(userDTO.getPhoneNumber())){
             throw new DataIntegrityViolationException("Phone number already exists");
+        }
+        Role role = roleRepository.findById(userDTO.getRoleId())
+                .orElseThrow(() -> new DataNotFoundException("Role not found!"));
+        if(role.getName().toUpperCase().equals(Role.ADMIN)){
+            throw new PermissionDenyException("You can not create a admin account!");
         }
 //        User user = new User();
 //        BeanUtils.copyProperties(userDTO,user);
@@ -49,8 +55,6 @@ public class UserServiceImpl implements IUserService {
                 .facebookAccountId(userDTO.getFacebookAccountId())
                 .googleAccountId(userDTO.getGoogleAccountId())
                 .build();
-        Role role = roleRepository.findById(userDTO.getRoleId())
-                .orElseThrow(() -> new DataNotFoundException("Role not found!"));
         newUser.setRole(role);
         newUser.setIsActive(true);
 
